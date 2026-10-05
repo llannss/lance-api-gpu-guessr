@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>GPU Guessr</title>
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+</head>
+
+
+<body>
+
+<div class="app">
+
+
+    <header class="topbar">
+
+        <a
+            href="index.html"
+            class="logo"
+        >
+            <div class="logo-mark">
+                G
+            </div>
+
+            <div>
+                <strong>
+                    GPU Guessr
+                </strong>
+
+                <span>
+                    How well do you know GPUs?
+                </span>
+            </div>
+        </a>
+
+
+        <div class="top-stats">
+
+            <div>
+                <span>Score</span>
+                <strong id="scoreValue">
+                    0
+                </strong>
+            </div>
+
+            <div>
+                <span>Streak</span>
+                <strong id="streakValue">
+                    0
+                </strong>
+            </div>
+
+            <div>
+                <span>Round</span>
+                <strong id="roundValue">
+                    1
+                </strong>
+            </div>
+
+        </div>
+
+    </header>
+
+
+
+    <main class="game-page">
+
+
+        <section class="hero">
+
+            <span class="eyebrow">
+                GPU KNOWLEDGE CHALLENGE
+            </span>
+
+            <h1>
+                Guess the GPU.
+            </h1>
+
+            <p>
+                Use the specifications as clues and identify
+                the correct graphics card.
+            </p>
+
+
+            <div class="difficulty-selector">
+
+                <button
+                    class="difficulty active"
+                    data-difficulty="easy"
+                >
+                    Easy
+                </button>
+
+                <button
+                    class="difficulty"
+                    data-difficulty="medium"
+                >
+                    Medium
+                </button>
+
+                <button
+                    class="difficulty"
+                    data-difficulty="hard"
+                >
+                    Hard
+                </button>
+
+            </div>
+
+        </section>
+
+
+
+        <section
+            class="game-card"
+            id="gameCard"
+        >
+
+
+            <div
+                class="loading"
+                id="gameLoading"
+            >
+                Loading GPU database...
+            </div>
+
+
+
+            <div
+                id="gameContent"
+                hidden
+            >
+
+
+                <div class="round-header">
+
+                    <div>
+
+                        <span class="round-label">
+                            ROUND
+                            <span id="questionRound">
+                                1
+                            </span>
+                        </span>
+
+                        <h2>
+                            Which GPU matches these specifications?
+                        </h2>
+
+                    </div>
+
+
+                    <button
+                        class="skip-button"
+                        id="skipButton"
+                        type="button"
+                    >
+                        Skip →
+                    </button>
+
+                </div>
+
+
+
+                <div
+                    class="clue-grid"
+                    id="clueGrid"
+                >
+                </div>
+
+
+
+                <div class="answer-section">
+
+                    <span class="answer-label">
+                        CHOOSE YOUR ANSWER
+                    </span>
+
+
+                    <div
+                        class="answer-grid"
+                        id="answerGrid"
+                    >
+                    </div>
+
+                </div>
+
+
+
+                <div
+                    class="result-panel"
+                    id="resultPanel"
+                    hidden
+                >
+
+                    <div>
+
+                        <span
+                            class="result-status"
+                            id="resultStatus"
+                        >
+                        </span>
+
+
+                        <h3 id="resultGpu">
+                        </h3>
+
+
+                        <p id="resultMessage">
+                        </p>
+
+                    </div>
+
+
+                    <button
+                        class="next-button"
+                        id="nextButton"
+                        type="button"
+                    >
+                        Next GPU →
+                    </button>
+
+                </div>
+
+
+            </div>
+
+        </section>
+
+
+
+        <section class="how-to-play">
+
+            <div>
+
+                <span>
+                    01
+                </span>
+
+                <h3>
+                    Read the clues
+                </h3>
+
+                <p>
+                    Each round shows specifications from
+                    a real GPU in the database.
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    02
+                </span>
+
+                <h3>
+                    Pick a GPU
+                </h3>
+
+                <p>
+                    Choose one of four possible graphics cards.
+                </p>
+
+            </div>
+
+
+            <div>
+
+                <span>
+                    03
+                </span>
+
+                <h3>
+                    Build your streak
+                </h3>
+
+                <p>
+                    Consecutive correct answers increase
+                    your score.
+                </p>
+
+            </div>
+
+        </section>
+
+
+    </main>
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
