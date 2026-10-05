@@ -6,20 +6,21 @@ export default async function handler(req, res) {
         });
     }
 
+    const apiKey = process.env.GPU_API_KEY;
+
+    if (!apiKey) {
+        return res.status(500).json({
+            error: "GPU_API_KEY is missing"
+        });
+    }
+
     try {
-
-        const apiKey =
-            process.env.GPU_API_KEY;
-
-        if (!apiKey) {
-            return res.status(500).json({
-                error: "GPU_API_KEY is missing"
-            });
-        }
 
         const response = await fetch(
             "https://lance-api-murex.vercel.app/gpus",
             {
+                method: "GET",
+
                 headers: {
                     Accept: "application/json",
                     "x-api-key": apiKey
@@ -27,8 +28,7 @@ export default async function handler(req, res) {
             }
         );
 
-        const text =
-            await response.text();
+        const text = await response.text();
 
         let data;
 
@@ -41,8 +41,11 @@ export default async function handler(req, res) {
         }
 
         if (!response.ok) {
-            return res.status(response.status).json({
-                error: "GPU API request failed",
+
+            return res.status(
+                response.status
+            ).json({
+                error: "Original GPU API failed",
                 status: response.status,
                 response: data
             });
@@ -52,13 +55,8 @@ export default async function handler(req, res) {
 
     } catch (error) {
 
-        console.error(
-            "GPU proxy error:",
-            error
-        );
-
         return res.status(500).json({
-            error: "Unable to load GPU data",
+            error: "GPU proxy failed",
             message: error.message
         });
     }
