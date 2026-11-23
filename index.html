@@ -1,299 +1,137 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <title>GPU Guessr</title>
-
-    <link
-        rel="stylesheet"
-        href="style.css"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>GPU Guessr – GPU Nexus</title>
+    <meta name="description" content="Guess real graphics cards from their specs, pictures, launch year and price. Eight ways to play, including one shared GPU a day.">
+    <meta name="theme-color" content="#14123d">
+    <meta property="og:title" content="GPU Guessr – GPU Nexus">
+    <meta property="og:description" content="Guess real graphics cards from their specs, pictures, launch year and price.">
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="css/nexus-tokens.css">
+    <link rel="stylesheet" href="style.css">
 </head>
-
-
 <body>
+<a class="skip-link" href="#main">Skip to the game</a>
 
-<div class="app">
+<header class="topbar">
+    <a class="brand" href="./" aria-label="GPU Guessr, back to the modes">
+        <svg class="brand-chip" viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M11 2.5v4M16 2.5v4M21 2.5v4M11 25.5v4M16 25.5v4M21 25.5v4M2.5 11h4M2.5 16h4M2.5 21h4M25.5 11h4M25.5 16h4M25.5 21h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="6.5" y="6.5" width="19" height="19" rx="4.5" fill="#f5f3ff" stroke="currentColor" stroke-width="2"/><circle cx="16" cy="16" r="6" fill="#8b5cf6"/><path d="M16 16c0-2.4 1.1-3.9 3-4.3M16 16c2.1 1.2 2.8 3 2.1 4.8M16 16c-2.1 1.2-4 1.2-5.2-.3" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><circle cx="16" cy="16" r="1.3" fill="#fff"/></svg>
+        <span class="brand-text">
+            <strong>GPU <span>Guessr</span></strong>
+            <small>alam mu ba itu?</small>
+        </span>
+    </a>
 
+    <dl class="top-stats" aria-label="This run">
+        <div><dt>Skur</dt><dd id="scoreValue">0</dd></div>
+        <div><dt>Strik</dt><dd id="streakValue">0</dd></div>
+        <div><dt>Rawnd</dt><dd id="roundValue">0</dd></div>
+    </dl>
+</header>
 
-    <header class="topbar">
-            <div>
-                <strong>
-                    GPU Guessr
-                </strong>
+<main id="main" tabindex="-1">
 
-                <span>
-                    alam mu ba itu?
-                </span>
+    <!-- ===================== LOBBY ===================== -->
+    <div class="view" id="lobby">
+
+        <section class="hero" data-enter>
+            <div class="hero-copy">
+                <h1>Guess the GPU.</h1>
+                <p class="hero-lead" id="heroLead">Real graphics cards, eight ways to play: specs, pictures, launch years and prices.</p>
+                <div class="hero-actions">
+                    <button class="btn btn-primary" type="button" id="playDaily">Play today's GPU</button>
+                    <button class="btn btn-ghost" type="button" id="quickPlay">Quick play: Classic</button>
+                </div>
             </div>
-        </a>
+            <div class="hero-wall" id="heroWall" aria-hidden="true"></div>
+        </section>
 
-
-        <div class="top-stats">
-
-            <div>
-                <span>Skur</span>
-                <strong id="scoreValue">
-                    0
-                </strong>
-            </div>
-
-            <div>
-                <span>Strik</span>
-                <strong id="streakValue">
-                    0
-                </strong>
-            </div>
-
-            <div>
-                <span>Rawnd</span>
-                <strong id="roundValue">
-                    1
-                </strong>
-            </div>
-
+        <div class="challenge-banner" id="challengeBanner" hidden>
+            <p id="challengeText"></p>
+            <button class="btn btn-primary" type="button" id="challengeStart">Take the challenge</button>
         </div>
 
-    </header>
-
-
-
-    <main class="game-page">
-
-
-        <section class="hero">
-
-            <span class="eyebrow">
-                GPU KNOWLIDG CHALINGE
-            </span>
-
-            <h1>
-                Guess the GPU.
-            </h1>
-
-            <p>
-                Use the specifications as clues and identify
-                the correct graphics card.
-            </p>
-
-
-            <div class="difficulty-selector">
-
-                <button
-                    class="difficulty active"
-                    data-difficulty="easy"
-                >
-                    Easy
-                </button>
-
-                <button
-                    class="difficulty"
-                    data-difficulty="medium"
-                >
-                    Medium
-                </button>
-
-                <button
-                    class="difficulty"
-                    data-difficulty="hard"
-                >
-                    Hard
-                </button>
-
+        <section class="daily-card" id="dailyCard" aria-labelledby="dailyTitle">
+            <div class="daily-photo"><img id="dailyPhoto" alt="" decoding="async"></div>
+            <div class="daily-copy">
+                <h2 id="dailyTitle">Today's GPU</h2>
+                <p>Everyone gets the same hidden card. Six guesses; each one tells you if the brand, architecture, memory, year and price are right, higher or lower.</p>
+                <p class="daily-status" id="dailyStatus"></p>
+                <button class="btn btn-primary" type="button" id="dailyOpen">Play today's GPU</button>
             </div>
-
         </section>
 
-
-
-        <section
-            class="game-card"
-            id="gameCard"
-        >
-
-
-            <div
-                class="loading"
-                id="gameLoading"
-            >
-                Loading GPU database...
+        <section class="modes" aria-labelledby="modesTitle">
+            <div class="modes-head">
+                <h2 id="modesTitle">Pick a mode</h2>
+                <div class="run-options">
+                    <div class="segmented" role="radiogroup" aria-label="Run length">
+                        <button type="button" role="radio" aria-checked="true" data-run="standard">10 rounds</button>
+                        <button type="button" role="radio" aria-checked="false" data-run="blitz">Blitz 60s</button>
+                        <button type="button" role="radio" aria-checked="false" data-run="survival">Survival</button>
+                    </div>
+                    <label class="fav-toggle" id="favToggleWrap">
+                        <input type="checkbox" id="favToggle">
+                        <span>Only my favorites</span>
+                    </label>
+                </div>
             </div>
-
-
-
-            <div
-                id="gameContent"
-                hidden
-            >
-
-
-                <div class="round-header">
-
-                    <div>
-
-                        <span class="round-label">
-                            ROUND
-                            <span id="questionRound">
-                                1
-                            </span>
-                        </span>
-
-                        <h2>
-                            Which GPU matches these specifications?
-                        </h2>
-
-                    </div>
-
-
-                    <button
-                        class="skip-button"
-                        id="skipButton"
-                        type="button"
-                    >
-                        Skip →
-                    </button>
-
-                </div>
-
-
-
-                <div
-                    class="clue-grid"
-                    id="clueGrid"
-                >
-                </div>
-
-
-
-                <div class="answer-section">
-
-                    <span class="answer-label">
-                        CHOOSE YOUR ANSWER
-                    </span>
-
-
-                    <div
-                        class="answer-grid"
-                        id="answerGrid"
-                    >
-                    </div>
-
-                </div>
-
-
-
-                <div
-                    class="result-panel"
-                    id="resultPanel"
-                    hidden
-                >
-
-                    <div>
-
-                        <span
-                            class="result-status"
-                            id="resultStatus"
-                        >
-                        </span>
-
-
-                        <h3 id="resultGpu">
-                        </h3>
-
-
-                        <p id="resultMessage">
-                        </p>
-
-                    </div>
-
-
-                    <button
-                        class="next-button"
-                        id="nextButton"
-                        type="button"
-                    >
-                        Next GPU →
-                    </button>
-
-                </div>
-
-
-            </div>
-
+            <p class="run-note" id="runNote">Ten rounds; points for every right answer and a bonus for streaks.</p>
+            <div class="mode-grid" id="modeGrid"></div>
         </section>
 
+        <p class="lobby-error" id="lobbyError" role="alert" hidden></p>
+    </div>
 
-
-        <section class="how-to-play">
-
-            <div>
-
-                <span>
-                    01
-                </span>
-
-                <h3>
-                    Read the clues
-                </h3>
-
-                <p>
-                    Each round shows specifications from
-                    a real GPU in the database.
-                </p>
-
+    <!-- ===================== PLAY ===================== -->
+    <div class="view" id="play" hidden>
+        <div class="playbar">
+            <div class="playbar-mode">
+                <strong id="playMode">Classic</strong>
+                <span id="playProgress">Round 1 of 10</span>
             </div>
+            <div class="playbar-meter" id="playMeter" hidden><span id="playMeterFill"></span></div>
+            <div class="lives" id="lives" hidden aria-label="Lives"></div>
+            <button class="btn btn-quiet" type="button" id="quitRun">End run</button>
+        </div>
 
+        <section class="stage" id="stage" aria-live="polite"></section>
 
-            <div>
-
-                <span>
-                    02
-                </span>
-
-                <h3>
-                    Pick a GPU
-                </h3>
-
-                <p>
-                    Choose one of four possible graphics cards.
-                </p>
-
+        <div class="reveal" id="reveal" hidden>
+            <div class="reveal-photo"><img id="revealPhoto" alt="" decoding="async"></div>
+            <div class="reveal-copy">
+                <p class="reveal-status" id="revealStatus"></p>
+                <h3 id="revealModel"></h3>
+                <p id="revealFacts"></p>
             </div>
+            <button class="btn btn-primary" type="button" id="nextRound">Next round</button>
+        </div>
+    </div>
 
-
-            <div>
-
-                <span>
-                    03
-                </span>
-
-                <h3>
-                    Build your streak
-                </h3>
-
-                <p>
-                    Consecutive correct answers increase
-                    your score.
-                </p>
-
+    <!-- ===================== RESULTS ===================== -->
+    <div class="view" id="results" hidden>
+        <section class="results-card" aria-labelledby="resultsTitle">
+            <h2 id="resultsTitle">Run complete</h2>
+            <p class="results-mode" id="resultsMode"></p>
+            <p class="results-score"><span id="resultsScore">0</span> <small>points</small></p>
+            <dl class="results-stats">
+                <div><dt>Right answers</dt><dd id="resultsRight">0</dd></div>
+                <div><dt>Best streak</dt><dd id="resultsStreak">0</dd></div>
+                <div><dt>Your best</dt><dd id="resultsBest">0</dd></div>
+            </dl>
+            <p class="results-vs" id="resultsVs" hidden></p>
+            <div class="results-actions">
+                <button class="btn btn-primary" type="button" id="playAgain">Play again</button>
+                <button class="btn btn-ghost" type="button" id="shareRun">Challenge a friend</button>
+                <button class="btn btn-quiet" type="button" id="backToModes">Choose another mode</button>
             </div>
-
+            <p class="share-note" id="shareNote" role="status"></p>
         </section>
-
-
-    </main>
-
-</div>
-
+    </div>
+</main>
 
 <script src="script.js"></script>
-
 </body>
 </html>
