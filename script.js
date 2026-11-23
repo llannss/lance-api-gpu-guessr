@@ -986,13 +986,24 @@ function renderDaily() {
             <form class="daily-form" id="dailyForm" novalidate>
                 <label for="dailyInput">Your guess</label>
                 <div class="daily-input-row">
-                    <input id="dailyInput" list="dailyList" autocomplete="off" placeholder="Start typing a model, e.g. RTX 3080" required>
+                    <div class="picker">
+                        <svg class="icon picker-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>
+                        <input id="dailyInput" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+                            aria-controls="dailyOptions" autocomplete="off" spellcheck="false" placeholder="Type a model, e.g. RTX 3080">
+                        <ul class="picker-list" id="dailyOptions" role="listbox" aria-label="Matching GPUs" hidden></ul>
+                    </div>
                     <button class="btn btn-primary" type="submit">Guess</button>
                 </div>
                 <p class="field-error" id="dailyError" role="alert" hidden></p>
-                <datalist id="dailyList">${catalog.map((g) => `<option value="${escapeHTML(g.model)}"></option>`).join("")}</datalist>
             </form>`}
-        <div class="daily-board" role="table" aria-label="Your guesses">
+        ${guesses.length ? "" : `
+            <ul class="daily-key" aria-label="How to read your guesses">
+                <li><span class="key-swatch is-hit"></span>Matches today's card</li>
+                <li><span class="key-swatch is-miss"></span>Doesn't match</li>
+                <li><span class="key-swatch is-up">${ARROWS.up}</span>Today's card is higher</li>
+                <li><span class="key-swatch is-up">${ARROWS.down}</span>Today's card is lower</li>
+            </ul>`}
+        <div class="daily-board" role="table" aria-label="Your guesses" ${guesses.length ? "" : "hidden"}>
             <div class="daily-row is-head" role="row">
                 <span role="columnheader">GPU</span>${DAILY_ROWS.map((r) => `<span role="columnheader">${r.label}</span>`).join("")}
             </div>
@@ -1022,16 +1033,26 @@ function renderDaily() {
         return;
     }
 
+    const guessed = new Set(state.guesses.map(String));
+    const picker = setupPicker($("dailyInput"), $("dailyOptions"),
+        catalog.filter((g) => !guessed.has(String(g.id))),
+        () => $("dailyForm").requestSubmit());
     $("dailyInput").focus({ preventScroll: true });
+
     $("dailyForm").addEventListener("submit", (event) => {
         event.preventDefault();
         const text = $("dailyInput").value.trim();
-        const gpu = catalog.find((g) => same(g.model, text));
+        // the exact name, else the only card the typed text matches
+        const only = picker.matches(text);
+        const gpu = catalog.find((g) => same(g.model, text)) || (only.length === 1 ? only[0] : null);
         const error = $("dailyError");
         if (!gpu) {
-            error.textContent = "Pick a model from the list; start typing and choose one.";
+            error.textContent = text
+                ? "More than one card matches. Pick one from the list."
+                : "Type a model, then pick it from the list.";
             error.hidden = false;
             $("dailyInput").setAttribute("aria-invalid", "true");
+            picker.open();
             return;
         }
         if (state.guesses.map(String).includes(String(gpu.id))) {
@@ -1046,6 +1067,107 @@ function renderDaily() {
         if (state.done) recordDailyStreak(state.won);
         renderDaily();
     });
+}
+
+// A typed search over the catalog: every word must appear in the brand,
+// model or series ("4070 ti", "radeon 9070"). Arrow keys move, Enter picks,
+// Escape closes; a pick fills the box and calls onPick.
+function setupPicker(input, list, items, onPick) {
+    const norm = (text) => String(text ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    let shown = [];
+    let active = -1;
+
+    function matches(text) {
+        const words = norm(text).split(" ").filter(Boolean);
+        if (!words.length) return [];
+        return items
+            .filter((g) => {
+                const hay = norm(`${g.brand} ${g.model} ${g.series}`);
+                return words.every((w) => hay.includes(w));
+            })
+            .sort((a, b) =>
+                Number(norm(b.model).startsWith(words[0])) - Number(norm(a.model).startsWith(words[0])) ||
+                (year(b) || 0) - (year(a) || 0));
+    }
+
+    function close() {
+        list.hidden = true;
+        input.setAttribute("aria-expanded", "false");
+        input.removeAttribute("aria-activedescendant");
+        active = -1;
+    }
+
+    function highlight(index) {
+        active = index;
+        list.querySelectorAll("[role=option]").forEach((li, i) => {
+            li.setAttribute("aria-selected", String(i === index));
+            if (i === index) li.scrollIntoView({ block: "nearest" });
+        });
+        if (index >= 0) input.setAttribute("aria-activedescendant", `pick-${index}`);
+        else input.removeAttribute("aria-activedescendant");
+    }
+
+    function open() {
+        shown = matches(input.value).slice(0, 8);
+        if (!input.value.trim()) return close();
+        list.innerHTML = shown.length
+            ? shown.map((g, i) => `
+                <li class="picker-option" id="pick-${i}" role="option" aria-selected="false" data-i="${i}">
+                    <span class="picker-photo"><img alt="" decoding="async"></span>
+                    <span class="picker-text">
+                        <strong>${escapeHTML(g.model)}</strong>
+                        <small>${escapeHTML([g.brand, Number.isFinite(year(g)) ? year(g) : "", g.vram].filter(Boolean).join(" · "))}</small>
+                    </span>
+                </li>`).join("")
+            : `<li class="picker-empty" role="option" aria-disabled="true">No card matches "${escapeHTML(input.value.trim())}"</li>`;
+        list.querySelectorAll(".picker-photo img").forEach((img, i) => setPicture(img, shown[i]));
+        list.hidden = false;
+        input.setAttribute("aria-expanded", "true");
+        highlight(shown.length ? 0 : -1);
+    }
+
+    function choose(index) {
+        const gpu = shown[index];
+        if (!gpu) return;
+        input.value = gpu.model;
+        close();
+        onPick(gpu);
+    }
+
+    input.addEventListener("input", () => {
+        input.removeAttribute("aria-invalid");
+        $("dailyError").hidden = true;
+        open();
+    });
+    input.addEventListener("keydown", (event) => {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+            event.preventDefault();
+            if (list.hidden) return open();
+            const step = event.key === "ArrowDown" ? 1 : -1;
+            highlight((active + step + shown.length) % Math.max(1, shown.length));
+        } else if (event.key === "Enter" && !list.hidden && active >= 0) {
+            event.preventDefault();
+            choose(active);
+        } else if (event.key === "Escape" && !list.hidden) {
+            event.preventDefault();
+            close();
+        }
+    });
+    // pointerdown, so the pick lands before the input's blur closes the list
+    list.addEventListener("pointerdown", (event) => {
+        const li = event.target.closest("[data-i]");
+        if (!li) return;
+        event.preventDefault();
+        choose(Number(li.dataset.i));
+    });
+    list.addEventListener("pointermove", (event) => {
+        const li = event.target.closest("[data-i]");
+        if (li && Number(li.dataset.i) !== active) highlight(Number(li.dataset.i));
+    });
+    input.addEventListener("blur", () => setTimeout(close, 120));
+    input.addEventListener("focus", () => input.value.trim() && open());
+
+    return { matches, open, close };
 }
 
 function recordDailyStreak(won) {

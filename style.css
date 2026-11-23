@@ -1653,3 +1653,156 @@ a.nexus-item:hover {
         transition: none;
     }
 }
+
+/* ---------- Daily: the GPU picker (replaces the browser's own list) ---------- */
+
+.picker {
+    position: relative;
+    min-width: 0;
+    flex: 1;
+}
+
+.picker-icon {
+    position: absolute;
+    top: 50%;
+    left: 16px;
+    width: 20px;
+    height: 20px;
+    color: var(--g-muted);
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.daily-input-row .picker input {
+    width: 100%;
+    padding-left: 46px;
+}
+
+.picker-list {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    left: 0;
+    z-index: 15;
+    max-height: min(420px, 60vh);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 6px;
+    border: 1px solid var(--g-line-strong);
+    border-radius: 14px;
+    background: #221f5e;
+    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+    list-style: none;
+    animation: picker-in 140ms var(--ease-out) both;
+    transform-origin: top center;
+}
+
+@keyframes picker-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px) scale(0.99);
+    }
+}
+
+.picker-option {
+    display: flex;
+    min-height: 60px;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 10px 6px 6px;
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.picker-option[aria-selected="true"] {
+    background: rgba(196, 181, 253, 0.14);
+}
+
+.picker-photo {
+    width: 64px;
+    height: 48px;
+    flex: none;
+    overflow: hidden;
+    border-radius: 8px;
+    background: var(--g-well);
+}
+
+.picker-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 4px;
+}
+
+.picker-text {
+    display: grid;
+    min-width: 0;
+}
+
+.picker-text strong {
+    font-size: 15px;
+}
+
+.picker-text small {
+    color: var(--g-muted);
+    font-size: 13px;
+}
+
+.picker-empty {
+    padding: 14px 12px;
+    color: var(--g-muted);
+    font-size: 14px;
+}
+
+/* before the first guess: what the colours mean */
+.daily-key {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 20px;
+    color: var(--g-muted);
+    font-size: 14px;
+    list-style: none;
+}
+
+.daily-key li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.key-swatch {
+    display: inline-grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border: 1px solid transparent;
+    border-radius: 6px;
+}
+
+.key-swatch.is-hit {
+    border-color: var(--g-right);
+    background: var(--g-right-bg);
+}
+
+.key-swatch.is-miss {
+    border-color: rgba(251, 113, 133, 0.5);
+    background: var(--g-wrong-bg);
+}
+
+.key-swatch.is-up {
+    border-color: rgba(251, 191, 36, 0.55);
+    background: var(--g-up-bg);
+    color: var(--g-up);
+}
+
+.key-swatch .icon {
+    width: 14px;
+    height: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .picker-list {
+        animation: none;
+    }
+}
