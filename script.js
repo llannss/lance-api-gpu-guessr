@@ -918,11 +918,17 @@ function endRun() {
     $("reveal").hidden = true;
 
     const key = `gg-best-${run.mode.id}-${run.kind}`;
-    const best = Math.max(readStore(key, 0), run.score);
+    const previousBest = readStore(key, 0);
+    const best = Math.max(previousBest, run.score);
     if (!run.favorites) writeStore(key, best);
 
     $("resultsMode").textContent = `${run.mode.name} · ${{ standard: "10 rounds", blitz: "Blitz 60s", survival: "Survival" }[run.kind]}`;
-    countUp($("resultsScore"), run.score);
+    const counting = countUp($("resultsScore"), run.score);
+    // a new personal best (not the very first run) gets its badge once the
+    // score has finished counting up
+    const newBest = $("resultsNewBest");
+    newBest.hidden = !(previousBest > 0 && run.score > previousBest && !run.favorites);
+    newBest.style.animationDelay = `${counting}ms`;
     $("resultsRight").textContent = `${run.right} of ${run.round}`;
     $("resultsStreak").textContent = run.bestStreak;
     $("resultsBest").textContent = best.toLocaleString();
@@ -944,7 +950,7 @@ function endRun() {
 function countUp(el, target) {
     if (REDUCED_MOTION || target <= 0) {
         el.textContent = target.toLocaleString();
-        return;
+        return 0;
     }
     const start = performance.now();
     const ms = Math.min(900, 400 + target / 4);
@@ -955,6 +961,7 @@ function countUp(el, target) {
         if (t < 1) requestAnimationFrame(tick);
     };
     requestAnimationFrame(tick);
+    return ms;
 }
 
 function challengeLink() {
@@ -1042,7 +1049,7 @@ function renderDaily() {
     stage.innerHTML = `
         <h2 class="stage-q">${state.done ? (state.won ? `Solved in ${guesses.length}.` : "Out of guesses.") : "Which GPU is today's card?"}</h2>
         ${state.done ? `
-            <div class="daily-answer">
+            <div class="daily-answer${renderDaily.fresh ? " is-reveal" : ""}">
                 <div class="daily-answer-photo"><img alt="" decoding="async"></div>
                 <div><h3>${escapeHTML(target.model)}</h3><p>${escapeHTML(factLine(target))}</p></div>
             </div>` : `
