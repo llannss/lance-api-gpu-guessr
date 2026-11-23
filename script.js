@@ -401,7 +401,7 @@ const MODES = [
             for (let tries = 0; tries < 60; tries++) {
                 const stat = pick(rng, HL_STATS);
                 const a = previous?.b && Number.isFinite(stat.get(previous.b)) ? previous.b : pick(rng, pool);
-                const options = pool.filter((g) => g !== a && Number.isFinite(stat.get(g)) && stat.get(g) !== stat.get(a));
+                const options = pool.filter((g) => g !== a && g.model !== a.model && Number.isFinite(stat.get(g)) && stat.get(g) !== stat.get(a));
                 if (!Number.isFinite(stat.get(a)) || !options.length) continue;
                 return { stat, a, b: pick(rng, options) };
             }
@@ -570,7 +570,10 @@ const MODES = [
         rule: "Slide to the launch price. Within a quarter of it counts as right.",
         picture: true,
         make(rng, pool) {
-            return { gpu: pick(rng, pool.filter((g) => Number.isFinite(price(g)))) };
+            // the slider runs $20 to $5,000; a card priced outside that (the catalog
+            // has a $434,444 one) can't be guessed, so it isn't asked
+            const reachable = pool.filter((g) => price(g) >= 20 && price(g) <= 5000);
+            return reachable.length ? { gpu: pick(rng, reachable) } : null;
         },
         render(round, stage, answer) {
             // a log scale from $20 to $5,000, so cheap and flagship cards are both easy to hit
@@ -719,16 +722,31 @@ function renderModeGrid() {
     });
 }
 
+// Without a usable GPU list nothing below the hero works, so the hero says why
+// and the rest stays out of the way.
+function showCatalogError(message) {
+    document.querySelector(".top-stats").hidden = true;
+    document.querySelector(".hero-actions").hidden = true;
+    $("heroWall").hidden = true;
+    $("dailyCard").hidden = true;
+    document.querySelector(".modes").hidden = true;
+    $("heroLead").after($("lobbyError"));
+    $("lobbyError").textContent = `${message} Refresh the page to try again.`;
+    $("lobbyError").hidden = false;
+}
+
 function renderHeroWall() {
     const pictured = catalog.filter(hasPicture);
     const rng = makeRng(hashString(todayKey()));
     const six = sample(rng, pictured, 6);
     $("heroWall").innerHTML = six.map((g, i) => `<span class="wall-tile${i === 4 ? " is-mystery" : ""}"><img alt="" decoding="async"></span>`).join("");
     $("heroWall").querySelectorAll("img").forEach((img, i) => setPicture(img, six[i]));
-    const years = catalog.map(year).filter(Number.isFinite);
+    const thisYear = new Date().getFullYear();
+    const years = catalog.map(year).filter((y) => Number.isFinite(y) && y <= thisYear);
     $("heroLead").textContent =
-        `${catalog.length} real graphics cards from ${Math.min(...years)} to ${Math.max(...years)}, ` +
-        "eight ways to play: specs, pictures, launch years and prices.";
+        `${catalog.length.toLocaleString()} real graphics cards` +
+        (years.length ? ` from ${Math.min(...years)} to ${Math.max(...years)}` : "") +
+        ", eight ways to play: specs, pictures, launch years and prices.";
 }
 
 function setupRunOptions() {
@@ -1331,9 +1349,7 @@ async function setup() {
         [catalog, favoriteIds] = await Promise.all([fetchCatalog(), fetchFavorites()]);
         if (catalog.length < 4) throw new Error("The GPU list needs at least four cards to play.");
     } catch (error) {
-        $("lobbyError").textContent = `${error.message} Refresh the page to try again.`;
-        $("lobbyError").hidden = false;
-        document.querySelectorAll("#lobby .btn, #lobby .segmented button").forEach((b) => { b.disabled = true; });
+        showCatalogError(error.message);
         return;
     }
 
