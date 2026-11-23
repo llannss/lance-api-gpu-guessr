@@ -1016,7 +1016,7 @@ main {
     border: 1px solid var(--g-line);
     border-radius: 20px;
     background: var(--g-raise-2);
-    animation: enter 260ms var(--ease-out) both;
+    animation: enter-small 180ms var(--ease-out) both;
 }
 
 .reveal-photo {
@@ -1138,13 +1138,17 @@ main {
 .daily-tile {
     justify-content: space-between;
     border: 1px solid transparent;
-    animation: enter 300ms var(--ease-out) both;
 }
 
-.daily-row .daily-tile:nth-child(3) { animation-delay: 50ms; }
-.daily-row .daily-tile:nth-child(4) { animation-delay: 100ms; }
-.daily-row .daily-tile:nth-child(5) { animation-delay: 150ms; }
-.daily-row .daily-tile:nth-child(6) { animation-delay: 200ms; }
+/* only the guess just made reveals itself, tile by tile */
+.daily-row.is-new .daily-tile {
+    animation: enter-small 240ms var(--ease-out) both;
+}
+
+.daily-row.is-new .daily-tile:nth-child(3) { animation-delay: 60ms; }
+.daily-row.is-new .daily-tile:nth-child(4) { animation-delay: 110ms; }
+.daily-row.is-new .daily-tile:nth-child(5) { animation-delay: 150ms; }
+.daily-row.is-new .daily-tile:nth-child(6) { animation-delay: 180ms; }
 
 .daily-tile.is-hit {
     border-color: var(--g-right);
@@ -1467,15 +1471,6 @@ main {
     }
 }
 
-@media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-        animation-duration: 1ms !important;
-        animation-delay: 0ms !important;
-        transition-duration: 1ms !important;
-    }
-}
 
 /* ---------- sign-in hold: nothing shows until /api/auth/me answers ---------- */
 
@@ -1804,5 +1799,189 @@ a.nexus-item:hover {
 @media (prefers-reduced-motion: reduce) {
     .picker-list {
         animation: none;
+    }
+}
+
+
+/* ---------- unread Marketplace messages ---------- */
+
+.nexus-toggle {
+    position: relative;
+}
+
+.nexus-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--g-bg);
+    border-radius: 50%;
+    background: var(--g-wrong);
+}
+
+.nexus-badge {
+    display: inline-grid;
+    min-width: 22px;
+    height: 22px;
+    margin-left: auto;
+    place-items: center;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--g-wrong);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+
+/* ---------- critique fixes ---------- */
+
+/* picture frames: a dark tile while loading, white once the cut-out arrives */
+:is(.wall-tile, .mode-photo, .duel-photo, .solo-photo, .lineup-photo, .budget-photo,
+    .reveal-photo, .daily-photo, .daily-answer-photo, .picker-photo, .zoom-frame):not(.is-missing):not(.has-image) {
+    background: var(--g-raise-2);
+}
+
+:is(.wall-tile, .mode-photo, .duel-photo, .solo-photo, .lineup-photo, .budget-photo,
+    .reveal-photo, .daily-photo, .daily-answer-photo, .picker-photo, .zoom-frame) img {
+    opacity: 0;
+    transition: opacity 240ms ease;
+}
+
+.has-image img {
+    opacity: 1;
+}
+
+/* Higher or Lower: the two cards are columns of the stage, not cards inside it */
+.duel-card {
+    padding: 0;
+    border: 0;
+    background: transparent;
+}
+
+/* the favorites option, when it can't be used: readable, with the reason written out */
+.fav-toggle.is-off {
+    opacity: 1;
+    color: var(--g-muted);
+    cursor: default;
+}
+
+.fav-toggle.is-off input {
+    opacity: 0.5;
+}
+
+.fav-note {
+    margin: -12px 0 20px;
+    color: var(--g-muted);
+    font-size: 14px;
+}
+
+.fav-note a {
+    color: var(--g-accent);
+}
+
+/* placeholders on the dark background: the browser's grey is 3.8:1 */
+input::placeholder,
+textarea::placeholder {
+    color: var(--g-muted);
+    opacity: 0.85;
+}
+
+
+/* ---------- interaction pass ---------- */
+
+@keyframes enter-small {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+}
+
+/* hover lifts and photo zooms only where there's a real pointer: on phones a
+   tap fires hover and the card would stay lifted */
+.mode-card:hover:not(:disabled),
+.lineup-pick:hover:not(:disabled),
+.budget-pick:hover:not(:disabled) {
+    transform: none;
+}
+
+.mode-card:hover:not(:disabled) .mode-photo img {
+    transform: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .mode-card:hover:not(:disabled),
+    .lineup-pick:hover:not(:disabled),
+    .budget-pick:hover:not(:disabled) {
+        transform: translateY(-2px);
+    }
+
+    .mode-card:hover:not(:disabled) .mode-photo img {
+        transform: scale(1.03);
+    }
+}
+
+/* everything pressable answers the press */
+.segmented button,
+.nexus-item,
+.picker-option,
+.lineup-pick,
+.budget-pick {
+    transition-property: background-color, border-color, color, transform;
+    transition-duration: 160ms;
+    transition-timing-function: var(--ease-out);
+}
+
+.segmented button:active,
+a.nexus-item:active,
+.picker-option:active {
+    transform: scale(0.98);
+}
+
+/* reduced motion: no movement, but fades stay, because they explain what changed */
+@media (prefers-reduced-motion: reduce) {
+    @keyframes enter {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes enter-small {
+        from {
+            opacity: 0;
+        }
+    }
+
+    @keyframes picker-in {
+        from {
+            opacity: 0;
+        }
+    }
+
+    [data-enter] .hero-copy > *,
+    [data-enter] .wall-tile,
+    .daily-row.is-new .daily-tile {
+        animation-delay: 0ms !important;
+    }
+
+    .btn:active,
+    .option:active,
+    .btn-choice:active,
+    .mode-card,
+    .mode-card:hover,
+    .mode-card:active,
+    .lineup-pick,
+    .budget-pick,
+    .segmented button:active,
+    a.nexus-item:active,
+    .picker-option:active,
+    .mode-photo img,
+    .nexus-panel {
+        transform: none !important;
+    }
+
+    .zoom-frame img {
+        transition: none;
     }
 }

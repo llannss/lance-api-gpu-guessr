@@ -151,6 +151,11 @@ function factLine(gpu) {
     ].filter(Boolean).join(" · ");
 }
 
+// Pictures fade in once loaded; until then their frame is a dark tile.
+document.addEventListener("load", (event) => {
+    if (event.target instanceof HTMLImageElement) event.target.parentElement?.classList.add("has-image");
+}, true);
+
 // A broken picture shows the drawn picture icon instead of a broken image.
 document.addEventListener("error", (event) => {
     const img = event.target;
@@ -162,7 +167,7 @@ document.addEventListener("error", (event) => {
 
 function setPicture(img, gpu) {
     img.hidden = false;
-    img.parentElement?.classList.remove("is-missing");
+    img.parentElement?.classList.remove("is-missing", "has-image");
     img.src = imageFor(gpu);
 }
 
@@ -214,6 +219,22 @@ function setupNexusMenu(account) {
             toggle.focus();
         }
     });
+
+    // unread Marketplace messages: a dot on the menu button and a count by
+    // the Marketplace link, so players hear about buyers while they play
+    fetch("/api/me/unread", { cache: "no-store", credentials: "same-origin" })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((data) => {
+            const unread = data?.unread || 0;
+            if (!unread) return;
+            $("nexusDot").hidden = false;
+            $("marketUnread").hidden = false;
+            $("marketUnread").textContent = String(unread);
+            $("marketNote").textContent = `${unread} unread message${unread === 1 ? "" : "s"}`;
+            $("nexusToggle").setAttribute("aria-label", `GPU Nexus menu, ${unread} unread message${unread === 1 ? "" : "s"}`);
+            document.querySelector('.nexus-item[href="/market/"]')?.setAttribute("href", "/market/#/inbox");
+        })
+        .catch(() => {});
 
     $("signOut").addEventListener("click", async () => {
         $("signOut").disabled = true;
@@ -647,8 +668,8 @@ const modeById = (id) => MODES.find((m) => m.id === id);
 // ============================================
 
 const RUN_NOTES = {
-    standard: "Ten rounds; points for every right answer and a bonus for streaks.",
-    blitz: "Sixty seconds. A right answer adds 2 seconds, a wrong one takes 5.",
+    standard: "Ten rounds. Every answer in a row adds 10% to your points, up to +50%.",
+    blitz: "Sixty seconds. A right answer adds 2 seconds, a wrong one takes 5. Streaks still add up to +50%.",
     survival: "Three lives. Every five right answers, the wrong choices get closer.",
 };
 
@@ -721,14 +742,18 @@ function setupRunOptions() {
     });
 
     const toggle = $("favToggle");
+    const off = (why) => {
+        toggle.disabled = true;
+        $("favToggleWrap").classList.add("is-off");
+        $("favNote").innerHTML = why;
+        $("favNote").hidden = false;
+        toggle.setAttribute("aria-describedby", "favNote");
+    };
     if (!favoriteIds) {
-        toggle.disabled = true;
-        $("favToggleWrap").title = "Couldn't load your favorites from the Finder. Refresh to try again.";
-        $("favToggleWrap").classList.add("is-off");
+        off("Only my favorites: couldn't load your Finder favorites. Refresh to try again.");
     } else if (favoriteIds.size < 4) {
-        toggle.disabled = true;
-        $("favToggleWrap").title = `Save at least 4 favorites in the Finder first (you have ${favoriteIds.size}).`;
-        $("favToggleWrap").classList.add("is-off");
+        off(`Only my favorites needs 4 saved GPUs; you have ${favoriteIds.size}. ` +
+            `<a href="/browse.html">Save some in the Finder</a>.`);
     }
     toggle.addEventListener("change", renderModeGrid);
 }
@@ -740,6 +765,8 @@ function setupRunOptions() {
 
 function showView(id) {
     ["lobby", "play", "results"].forEach((v) => { $(v).hidden = v !== id; });
+    // Skur / Strik / Rawnd mean nothing before a run starts
+    document.querySelector(".top-stats").hidden = id === "lobby";
     window.scrollTo(0, 0);
     $("main").focus({ preventScroll: true });
 }
@@ -877,7 +904,7 @@ function endRun() {
     if (!run.favorites) writeStore(key, best);
 
     $("resultsMode").textContent = `${run.mode.name} · ${{ standard: "10 rounds", blitz: "Blitz 60s", survival: "Survival" }[run.kind]}`;
-    $("resultsScore").textContent = run.score.toLocaleString();
+    countUp($("resultsScore"), run.score);
     $("resultsRight").textContent = `${run.right} of ${run.round}`;
     $("resultsStreak").textContent = run.bestStreak;
     $("resultsBest").textContent = best.toLocaleString();
@@ -892,6 +919,24 @@ function endRun() {
     $("shareRun").title = run.favorites ? "Runs with your own favorites can't be shared." : "";
     $("shareNote").textContent = "";
     showView("results");
+}
+
+// The final score counts up once: a rare, earned moment. Instant when the
+// player prefers reduced motion.
+function countUp(el, target) {
+    if (REDUCED_MOTION || target <= 0) {
+        el.textContent = target.toLocaleString();
+        return;
+    }
+    const start = performance.now();
+    const ms = Math.min(900, 400 + target / 4);
+    const tick = (now) => {
+        const t = Math.min(1, (now - start) / ms);
+        const eased = 1 - (1 - t) ** 3;          // ease-out
+        el.textContent = Math.round(target * eased).toLocaleString();
+        if (t < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
 }
 
 function challengeLink() {
@@ -1007,8 +1052,8 @@ function renderDaily() {
             <div class="daily-row is-head" role="row">
                 <span role="columnheader">GPU</span>${DAILY_ROWS.map((r) => `<span role="columnheader">${r.label}</span>`).join("")}
             </div>
-            ${guesses.map((g) => `
-                <div class="daily-row" role="row">
+            ${guesses.map((g, i) => `
+                <div class="daily-row${i === guesses.length - 1 && renderDaily.fresh ? " is-new" : ""}" role="row">
                     <span class="daily-model" role="cell">${escapeHTML(g.model)}</span>
                     ${DAILY_ROWS.map((r) => {
                         const result = r.test(g, target);
@@ -1065,7 +1110,9 @@ function renderDaily() {
         state.done = state.won || state.guesses.length >= DAILY_TRIES;
         writeStore(`gg-daily-${todayKey()}`, state);
         if (state.done) recordDailyStreak(state.won);
+        renderDaily.fresh = true;     // animate only the guess just made
         renderDaily();
+        renderDaily.fresh = false;
     });
 }
 
