@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="auth-checking">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
@@ -24,11 +24,39 @@
         </span>
     </a>
 
-    <dl class="top-stats" aria-label="This run">
-        <div><dt>Skur</dt><dd id="scoreValue">0</dd></div>
-        <div><dt>Strik</dt><dd id="streakValue">0</dd></div>
-        <div><dt>Rawnd</dt><dd id="roundValue">0</dd></div>
-    </dl>
+    <div class="topbar-right">
+        <dl class="top-stats" aria-label="This run">
+            <div><dt>Skur</dt><dd id="scoreValue">0</dd></div>
+            <div><dt>Strik</dt><dd id="streakValue">0</dd></div>
+            <div><dt>Rawnd</dt><dd id="roundValue">0</dd></div>
+        </dl>
+
+        <!-- GPU Nexus menu: the other two sites and the account -->
+        <div class="nexus-menu" id="nexusMenu">
+            <button class="nexus-toggle" type="button" id="nexusToggle" aria-label="GPU Nexus menu" aria-expanded="false" aria-controls="nexusPanel">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>
+                <span class="nexus-toggle-text">GPU Nexus</span>
+            </button>
+            <div class="nexus-panel" id="nexusPanel">
+                <p class="nexus-account" id="nexusAccount"></p>
+                <nav aria-label="GPU Nexus">
+                    <a class="nexus-item" href="/index.html">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="6"/><path d="m20 20-4.5-4.5"/></svg>
+                        <span><strong>Finder</strong><small>Search, compare and rank GPUs</small></span>
+                    </a>
+                    <a class="nexus-item is-current" href="./" aria-current="page">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="7" width="19" height="11" rx="4"/><path d="M7 10.5v4M5 12.5h4M15.5 11.5h.01M18 13.5h.01"/></svg>
+                        <span><strong>GPU Guessr</strong><small>You're here</small></span>
+                    </a>
+                    <div class="nexus-item is-plain">
+                        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9h16l-1.5 10.5h-13z"/><path d="M8.5 9V7a3.5 3.5 0 0 1 7 0v2"/></svg>
+                        <span><strong>Marketplace</strong><small>Buy and sell used GPUs</small></span>
+                    </div>
+                </nav>
+                <button class="nexus-signout" type="button" id="signOut">Sign out</button>
+            </div>
+        </div>
+    </div>
 </header>
 
 <main id="main" tabindex="-1">

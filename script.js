@@ -8,6 +8,11 @@
 
 const $ = (id) => document.getElementById(id);
 
+// GPU Guessr is served at /arena/ on the GPU Nexus site (a rewrite in the
+// Finder's vercel.json), so it shares the Finder's sign-in cookie and /api.
+// Opened on its own Vercel address, it sends players to that page instead.
+const NEXUS = "https://lance-api-gpu-finder.vercel.app";
+
 const STANDARD_ROUNDS = 10;
 const BLITZ_SECONDS = 60;
 const BLITZ_RIGHT = 2;     // seconds added for a right answer
@@ -163,11 +168,78 @@ function setPicture(img, gpu) {
 
 
 // ============================================
+// SIGN-IN (shared with the whole GPU Nexus site)
+// ============================================
+
+function goToSignIn() {
+    location.replace(`/signin.html?next=${encodeURIComponent(`arena/${location.search}`)}`);
+}
+
+// Resolves to the signed-in account, or redirects and resolves to null.
+async function requireSignIn() {
+    if (!location.pathname.startsWith("/arena")) {
+        location.replace(`${NEXUS}/arena/${location.search}`);
+        return null;
+    }
+    let response = null;
+    try {
+        response = await fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" });
+    } catch {
+        // network error: reported below
+    }
+    if (response?.status === 401) {
+        goToSignIn();
+        return null;
+    }
+    if (!response?.ok) throw new Error("Couldn't check your GPU Nexus sign-in.");
+    return response.json();
+}
+
+function setupNexusMenu(account) {
+    const menu = $("nexusMenu");
+    const toggle = $("nexusToggle");
+    $("nexusAccount").textContent = `Signed in as ${account.email}`;
+
+    const setOpen = (open) => {
+        menu.classList.toggle("is-open", open);
+        toggle.setAttribute("aria-expanded", String(open));
+    };
+    toggle.addEventListener("click", () => setOpen(!menu.classList.contains("is-open")));
+    document.addEventListener("click", (event) => {
+        if (!menu.contains(event.target)) setOpen(false);
+    });
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && menu.classList.contains("is-open")) {
+            setOpen(false);
+            toggle.focus();
+        }
+    });
+
+    $("signOut").addEventListener("click", async () => {
+        $("signOut").disabled = true;
+        try {
+            await fetch("/api/auth/logout", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: { "X-Requested-With": "fetch" },
+            });
+        } finally {
+            location.replace("/signin.html");
+        }
+    });
+}
+
+
+// ============================================
 // LOADING
 // ============================================
 
 async function fetchCatalog() {
     const response = await fetch("/api/gpus", { cache: "no-store", credentials: "same-origin" });
+    if (response.status === 401) {
+        goToSignIn();   // the session ran out
+        throw new Error("Your sign-in ran out.");
+    }
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.detail || data.error || "Couldn't load the GPU list.");
     const list = Array.isArray(data) ? data : data.gpus || data.data || [];
@@ -651,7 +723,7 @@ function setupRunOptions() {
     const toggle = $("favToggle");
     if (!favoriteIds) {
         toggle.disabled = true;
-        $("favToggleWrap").title = "Sign in on GPU Nexus and open the game there to play with your favorites.";
+        $("favToggleWrap").title = "Couldn't load your favorites from the Finder. Refresh to try again.";
         $("favToggleWrap").classList.add("is-off");
     } else if (favoriteIds.size < 4) {
         toggle.disabled = true;
@@ -1071,6 +1143,20 @@ async function setup() {
     $("playDaily").addEventListener("click", openDaily);
     $("dailyOpen").addEventListener("click", openDaily);
     $("quickPlay").addEventListener("click", () => startRun("classic", "standard", {}));
+
+    let account;
+    try {
+        account = await requireSignIn();
+    } catch (error) {
+        account = null;
+        document.documentElement.classList.remove("auth-checking");
+        $("lobbyError").textContent = `${error.message} Refresh the page to try again.`;
+        $("lobbyError").hidden = false;
+        return;
+    }
+    if (!account) return;   // on the way to the sign-in page
+    document.documentElement.classList.remove("auth-checking");
+    setupNexusMenu(account);
 
     try {
         [catalog, favoriteIds] = await Promise.all([fetchCatalog(), fetchFavorites()]);

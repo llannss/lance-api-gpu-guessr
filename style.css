@@ -1476,3 +1476,180 @@ main {
         transition-duration: 1ms !important;
     }
 }
+
+/* ---------- sign-in hold: nothing shows until /api/auth/me answers ---------- */
+
+.auth-checking body {
+    visibility: hidden;
+}
+
+
+/* ---------- GPU Nexus menu: the other two sites and the account ---------- */
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.nexus-menu {
+    position: relative;
+}
+
+.nexus-toggle {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    gap: 8px;
+    padding: 0 14px;
+    border: 1px solid var(--g-line-strong);
+    border-radius: 10px;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    transition: border-color 160ms ease, background-color 160ms ease, transform 160ms var(--ease-out);
+}
+
+.nexus-toggle:hover,
+.nexus-menu.is-open .nexus-toggle {
+    border-color: var(--g-accent);
+    background: rgba(196, 181, 253, 0.08);
+}
+
+.nexus-toggle:active {
+    transform: scale(0.97);
+}
+
+/* closed: invisible and out of the tab order; opens from the button's corner */
+.nexus-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 30;
+    width: 300px;
+    padding: 8px;
+    border: 1px solid var(--g-line-strong);
+    border-radius: 16px;
+    background: #221f5e;
+    box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.97) translateY(-4px);
+    transform-origin: top right;
+    transition:
+        opacity 160ms var(--ease-out),
+        transform 160ms var(--ease-out),
+        visibility 0s linear 160ms;
+}
+
+.nexus-menu.is-open .nexus-panel {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    transition:
+        opacity 180ms var(--ease-out),
+        transform 180ms var(--ease-out),
+        visibility 0s;
+}
+
+.nexus-account {
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--g-line);
+    margin-bottom: 6px;
+    color: var(--g-muted);
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.nexus-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 8px 10px;
+    border-radius: 10px;
+    color: var(--g-text);
+    text-decoration: none;
+}
+
+a.nexus-item:hover {
+    background: rgba(255, 255, 255, 0.07);
+}
+
+.nexus-item .icon {
+    width: 22px;
+    height: 22px;
+    color: var(--g-accent);
+}
+
+.nexus-item span {
+    display: grid;
+}
+
+.nexus-item strong {
+    font-size: 15px;
+}
+
+.nexus-item small {
+    color: var(--g-muted);
+    font-size: 13px;
+}
+
+.nexus-item.is-current {
+    background: rgba(196, 181, 253, 0.12);
+}
+
+.nexus-item.is-plain {
+    cursor: default;
+}
+
+.nexus-signout {
+    width: 100%;
+    min-height: 44px;
+    margin-top: 6px;
+    border: 0;
+    border-top: 1px solid var(--g-line);
+    border-radius: 0 0 10px 10px;
+    background: transparent;
+    color: var(--g-muted);
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    padding: 0 10px;
+}
+
+.nexus-signout:hover {
+    color: var(--g-text);
+}
+
+@media (max-width: 600px) {
+    .nexus-toggle {
+        padding: 0 11px;
+    }
+
+    .nexus-toggle-text {
+        display: none;
+    }
+
+    .topbar-right {
+        gap: 6px;
+    }
+
+    .brand strong {
+        font-size: 16px;
+    }
+
+    .nexus-panel {
+        position: fixed;
+        top: 64px;
+        right: 12px;
+        left: 12px;
+        width: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nexus-panel {
+        transition: none;
+    }
+}
